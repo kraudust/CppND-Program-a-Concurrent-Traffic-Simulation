@@ -12,6 +12,7 @@ T MessageQueue<T>::receive()
     std::unique_lock<std::mutex> lck(_mutex);
     _cond.wait(lck, [this] {return !_queue.empty();});
     T message = std::move(_queue.back());
+    _queue.clear();
     return message;
 }
 
@@ -22,6 +23,7 @@ void MessageQueue<T>::send(T&& msg)
     // as well as _condition.notify_one() to add a new message to the queue and afterwards send a
     // notification.
     std::lock_guard<std::mutex> lck(_mutex);
+    _queue.clear();
     _queue.emplace_back(std::move(msg));
     _cond.notify_one();
 }
@@ -68,8 +70,8 @@ void TrafficLight::cycleThroughPhases()
 
     // Get random light duration between 4 and 6
     // Set the seed for each instance of the TrafficLight. If this isn't there, all lights change simultaneously
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine gen(seed);
+    std::mt19937 mt(std::chrono::system_clock::now().time_since_epoch().count());
+    std::default_random_engine gen(mt());
     std::uniform_real_distribution<double> distribution(4.0, 6.0);
     double light_duration = distribution(gen);
 
